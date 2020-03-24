@@ -31,7 +31,7 @@ WHEEL_INFO_RE = re.compile(
 def verify_patchelf():
     """This function looks for the ``patchelf`` external binary in the PATH,
     checks for the required version, and throws an exception if a proper
-    version can't be found. Otherwise, silcence is golden
+    version can't be found. Otherwise, silence is golden
     """
     if not find_executable('patchelf'):
         raise ValueError('Cannot find required utility `patchelf` in PATH')
@@ -150,5 +150,9 @@ def copylib(src_path, dest_dir):
 def patchelf_set_rpath(fn, libdir):
     rpath = pjoin('$ORIGIN', relpath(libdir, dirname(fn)))
     logger.debug('Setting RPATH: %s to "%s"', fn, rpath)
+    prev_rpath = check_output(['patchelf', '--print-rpath', fn]
+                              ).decode().rstrip('\n\t /')
     check_call(['patchelf', '--remove-rpath', fn])
+    if prev_rpath and prev_rpath != rpath:
+        rpath += ":" + prev_rpath
     check_call(['patchelf', '--force-rpath', '--set-rpath', rpath, fn])
